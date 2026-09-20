@@ -3403,6 +3403,72 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.image")
+      .doc("The container image used to launch the engine pod when the engine deploy mode is " +
+        "KUBERNETES. The image must have the engine's jars available at the path configured " +
+        "by kyuubi.engine.kubernetes.classpath. Required when the deploy mode is KUBERNETES.")
+      .version("1.13.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE_PULL_POLICY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.image.pull.policy")
+      .doc("The image pull policy for the engine pod when the engine deploy mode is KUBERNETES.")
+      .version("1.13.0")
+      .stringConf
+      .createWithDefault("IfNotPresent")
+
+  val ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.service.account")
+      .doc("The service account used by the engine pod when the engine deploy mode is " +
+        "KUBERNETES.")
+      .version("1.13.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DEPLOY_KUBERNETES_MODE_CLASSPATH: ConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.classpath")
+      .doc("The classpath used to launch the engine main class inside the engine pod when the " +
+        "engine deploy mode is KUBERNETES. Unlike YARN mode, Kubernetes has no local-resource " +
+        "distribution, so this must match the layout already baked into the container image " +
+        "referenced by kyuubi.engine.kubernetes.image.")
+      .version("1.13.0")
+      .stringConf
+      .createWithDefault("/opt/kyuubi/externals/kyuubi-jdbc-engine/*")
+
+  val ENGINE_DEPLOY_KUBERNETES_MODE_REQUEST_CORES: ConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.request.cores")
+      .doc("The cpu request for the engine pod when the engine deploy mode is KUBERNETES.")
+      .version("1.13.0")
+      .stringConf
+      .createWithDefault("1")
+
+  val ENGINE_DEPLOY_KUBERNETES_MODE_REQUEST_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.request.memory")
+      .doc("The memory request for the engine pod when the engine deploy mode is KUBERNETES. " +
+        "This is independent of kyuubi.engine.jdbc.memory, which sizes the JVM heap (-Xmx) " +
+        "inside the container; size this at or above that value to leave headroom.")
+      .version("1.13.0")
+      .stringConf
+      .createWithDefault("1Gi")
+
+  val ENGINE_DEPLOY_KUBERNETES_MODE_LIMIT_CORES: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.limit.cores")
+      .doc("The cpu limit for the engine pod when the engine deploy mode is KUBERNETES. Unset " +
+        "means no limit.")
+      .version("1.13.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DEPLOY_KUBERNETES_MODE_LIMIT_MEMORY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.kubernetes.limit.memory")
+      .doc("The memory limit for the engine pod when the engine deploy mode is KUBERNETES. " +
+        "Unset means no limit.")
+      .version("1.13.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_PRINCIPAL: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.principal")
       .doc("Kerberos principal for the kyuubi engine.")
@@ -3791,15 +3857,18 @@ object KyuubiConf {
 
   val ENGINE_JDBC_DEPLOY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.deploy.mode")
-      .doc("Configures the jdbc engine deploy mode, The value can be 'local', 'yarn'. " +
-        "In local mode, the engine operates on the same node as the KyuubiServer. " +
-        "In YARN mode, the engine runs within the Application Master (AM) container of YARN. ")
+      .doc("Configures the jdbc engine deploy mode, The value can be 'local', 'yarn', " +
+        "'kubernetes'. In local mode, the engine operates on the same node as the " +
+        "KyuubiServer. In YARN mode, the engine runs within the Application Master (AM) " +
+        "container of YARN. In KUBERNETES mode, the engine runs as a single pod on " +
+        "Kubernetes; both YARN and KUBERNETES mode are experimental.")
       .version("1.10.0")
       .stringConf
       .transformToUpperCase
       .checkValue(
-        mode => Set("LOCAL", "YARN").contains(mode),
-        "Invalid value for 'kyuubi.engine.jdbc.deploy.mode'. Valid values are 'local', 'yarn'.")
+        mode => Set("LOCAL", "YARN", "KUBERNETES").contains(mode),
+        "Invalid value for 'kyuubi.engine.jdbc.deploy.mode'. Valid values are 'local', " +
+          "'yarn', 'kubernetes'.")
       .createWithDefault(DeployMode.LOCAL.toString)
 
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =

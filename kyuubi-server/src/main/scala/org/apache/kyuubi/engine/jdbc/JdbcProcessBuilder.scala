@@ -32,7 +32,7 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, EN
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.{EngineType, ProcBuilder}
 import org.apache.kyuubi.engine.deploy.DeployMode
-import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
+import org.apache.kyuubi.engine.deploy.DeployMode.{KUBERNETES, LOCAL, YARN}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
@@ -138,6 +138,14 @@ object JdbcProcessBuilder extends Logging {
         warn(s"JDBC on YARN model is experimental.")
         conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
         new JdbcYarnModeProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+      case KUBERNETES =>
+        warn(s"JDBC on Kubernetes model is experimental.")
+        new JdbcKubernetesModeProcessBuilder(
+          proxyUser,
+          doAsEnabled,
+          conf,
+          engineRefId,
+          extraEngineLog)
       case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
     }
   }

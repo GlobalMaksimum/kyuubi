@@ -52,6 +52,18 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- used by JdbcKubernetesModeSubmitter to submit the engine pod when
+             kyuubi.engine.jdbc.deploy.mode is KUBERNETES -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-httpclient-okhttp</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
