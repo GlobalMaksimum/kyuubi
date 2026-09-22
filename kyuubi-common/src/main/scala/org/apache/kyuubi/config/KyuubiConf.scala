@@ -3432,10 +3432,12 @@ object KyuubiConf {
       .doc("The classpath used to launch the engine main class inside the engine pod when the " +
         "engine deploy mode is KUBERNETES. Unlike YARN mode, Kubernetes has no local-resource " +
         "distribution, so this must match the layout already baked into the container image " +
-        "referenced by kyuubi.engine.kubernetes.image.")
+        "referenced by kyuubi.engine.kubernetes.image. The default matches the layout " +
+        "build/dist and docker/jdbc-engine/Dockerfile produce, i.e. $KYUUBI_HOME/externals" +
+        "/engines/jdbc.")
       .version("1.13.0")
       .stringConf
-      .createWithDefault("/opt/kyuubi/externals/kyuubi-jdbc-engine/*")
+      .createWithDefault("/opt/kyuubi/externals/engines/jdbc/*")
 
   val ENGINE_DEPLOY_KUBERNETES_MODE_REQUEST_CORES: ConfigEntry[String] =
     buildConf("kyuubi.engine.kubernetes.request.cores")
