@@ -18,7 +18,7 @@ package org.apache.kyuubi.engine.jdbc
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DEPLOY_MODE, KUBERNETES_CONTEXT, KUBERNETES_NAMESPACE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE, ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT, ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DEPLOY_MODE, KUBERNETES_CONTEXT, KUBERNETES_NAMESPACE}
 import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.engine.deploy.DeployMode
 
@@ -39,6 +39,23 @@ class JdbcKubernetesModeProcessBuilderSuite extends KyuubiFunSuite {
     assert(builder.toString.contains("--conf kyuubi.session.user=kyuubi"))
     assert(builder.toString.contains("--conf kyuubi.engine.id=engine-ref-id"))
     assert(builder.toString.contains("--conf kyuubi.on=off"))
+  }
+
+  test("SERVER-audience image/service account configs still reach the submitter's own conf") {
+    // Regression test: conf.getEngineConf(EngineType.JDBC), used below for most engine confs,
+    // filters by audience and drops SERVER-only entries. ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE and
+    // _SERVICE_ACCOUNT are marked SERVER (so a client/session can't override them, see
+    // KyuubiConf), which previously meant they silently never reached the submitter at all -
+    // the pod build then failed with "kyuubi.engine.kubernetes.image must be set" even though it
+    // genuinely was set server-side.
+    val conf = newConf
+      .set(ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE.key, "kyuubi/kyuubi-jdbc-engine:latest")
+      .set(ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT.key, "kyuubi-engine")
+    val builder = new JdbcKubernetesModeProcessBuilder("kyuubi", true, conf, "engine-ref-id")
+    assert(builder.toString.contains(
+      s"--conf ${ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE.key}=kyuubi/kyuubi-jdbc-engine:latest"))
+    assert(builder.toString.contains(
+      s"--conf ${ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT.key}=kyuubi-engine"))
   }
 
   test("cluster manager and app manager info") {

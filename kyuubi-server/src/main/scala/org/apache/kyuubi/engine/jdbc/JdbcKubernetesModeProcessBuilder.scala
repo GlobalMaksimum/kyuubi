@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_MEMORY, KUBERNETES_CONTEXT, KUBERNETES_NAMESPACE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE, ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_MEMORY, KUBERNETES_CONTEXT, KUBERNETES_NAMESPACE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -98,6 +98,18 @@ class JdbcKubernetesModeProcessBuilder(
 
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
     buffer ++= confKeyValue(KYUUBI_ENGINE_ID, engineRefId)
+
+    // conf.getEngineConf below filters by audience and drops SERVER-only entries - by design,
+    // since it also feeds what gets forwarded into the actual SQL engine. ENGINE_DEPLOY_
+    // KUBERNETES_MODE_IMAGE/SERVICE_ACCOUNT are marked SERVER (so a client/session can't
+    // override them), but the submitter process launched here still needs their resolved
+    // values to build the pod, so it must be forwarded explicitly rather than through that path.
+    conf.get(ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE).foreach { image =>
+      buffer ++= confKeyValue(ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE.key, image)
+    }
+    conf.get(ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT).foreach { serviceAccount =>
+      buffer ++= confKeyValue(ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT.key, serviceAccount)
+    }
 
     buffer ++= confKeyValues(conf.getEngineConf(EngineType.JDBC))
 
