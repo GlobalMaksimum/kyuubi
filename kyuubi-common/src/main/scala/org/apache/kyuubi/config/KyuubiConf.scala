@@ -3405,9 +3405,13 @@ object KyuubiConf {
 
   val ENGINE_DEPLOY_KUBERNETES_MODE_IMAGE: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.kubernetes.image")
+      .audience(SERVER)
+      .immutable
       .doc("The container image used to launch the engine pod when the engine deploy mode is " +
         "KUBERNETES. The image must have the engine's jars available at the path configured " +
-        "by kyuubi.engine.kubernetes.classpath. Required when the deploy mode is KUBERNETES.")
+        "by kyuubi.engine.kubernetes.classpath. Required when the deploy mode is KUBERNETES. " +
+        "SERVER-only and immutable: letting a session choose its own image would let it run " +
+        "arbitrary code as whatever the engine pod's service account can reach in the cluster.")
       .version("1.13.0")
       .stringConf
       .createOptional
@@ -3421,8 +3425,12 @@ object KyuubiConf {
 
   val ENGINE_DEPLOY_KUBERNETES_MODE_SERVICE_ACCOUNT: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.kubernetes.service.account")
+      .audience(SERVER)
+      .immutable
       .doc("The service account used by the engine pod when the engine deploy mode is " +
-        "KUBERNETES.")
+        "KUBERNETES. SERVER-only and immutable for the same reason as " +
+        "kyuubi.engine.kubernetes.image: a session-chosen service account could grant the " +
+        "engine pod broader cluster RBAC permissions than intended.")
       .version("1.13.0")
       .stringConf
       .createOptional
@@ -3859,11 +3867,16 @@ object KyuubiConf {
 
   val ENGINE_JDBC_DEPLOY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.deploy.mode")
+      .audience(SERVER)
+      .immutable
       .doc("Configures the jdbc engine deploy mode, The value can be 'local', 'yarn', " +
         "'kubernetes'. In local mode, the engine operates on the same node as the " +
         "KyuubiServer. In YARN mode, the engine runs within the Application Master (AM) " +
         "container of YARN. In KUBERNETES mode, the engine runs as a single pod on " +
-        "Kubernetes; both YARN and KUBERNETES mode are experimental.")
+        "Kubernetes; both YARN and KUBERNETES mode are experimental. SERVER-only and " +
+        "immutable: a session should not be able to unilaterally move its engine onto a " +
+        "cluster manager (and, for KUBERNETES, a service account) the admin did not choose " +
+        "for it; use a session conf advisor or user default to vary this per user instead.")
       .version("1.10.0")
       .stringConf
       .transformToUpperCase
