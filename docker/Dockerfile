@@ -60,6 +60,11 @@ COPY jars ${KYUUBI_HOME}/jars
 COPY beeline-jars ${KYUUBI_HOME}/beeline-jars
 COPY web-ui ${KYUUBI_HOME}/web-ui
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
+# Needed even though the JDBC engine itself never runs inside this image: LOCAL/YARN/KUBERNETES
+# deploy mode all launch it (or, for KUBERNETES, its submitter) as a process on whatever host
+# runs the Kyuubi server, so that host - this image, when the server itself runs on Kubernetes -
+# needs these jars on its own filesystem too.
+COPY externals/engines/jdbc ${KYUUBI_HOME}/externals/engines/jdbc
 
 WORKDIR ${KYUUBI_HOME}
 RUN chown -R kyuubi:root ${KYUUBI_HOME} && \
